@@ -1,7 +1,7 @@
 import pandas as pd
 import openai
 import ast
-import json
+import asyncio
 import dotenv
 
 api_key = dotenv.get_key(".env", "API_KEY")
@@ -49,7 +49,13 @@ def test(
     prediction_emotion_strs: list[str],
     true_emotion_strs: list[str],
     sample_ids: list[str] | None = None,
-) -> pd.DataFrame:
+    tag: str = "default",
+) -> tuple[pd.DataFrame, tuple[float, float, float]]:
+    """
+    prediction_emotion_strs/ true_emotion_strs: e.g. ["['喜悦', '高兴']", "['悲伤', '难过']"]
+    sample_ids: e.g. ["sample_00000007", "sample_00000021"], should align with prediction_emotion_strs
+    tag: for logging purpose e.g. "default"
+    """
     result_df = pd.DataFrame(
         columns=[
             "sample_index",
@@ -94,8 +100,21 @@ def test(
                 ]
             )
         except:
-            print(f"sample {i} failed")
+            print(f"WARNING at {tag}: sample {i} failed")
             continue
-        print(f"sample {i}: accuracy: {accuracy}, recall: {recall}, score: {score}")
 
-    return result_df
+        mean_accuracy = result_df["accuracy"].mean()
+        mean_recall = result_df["recall"].mean()
+        mean_score = result_df["score"].mean()
+        return result_df, (mean_accuracy, mean_recall, mean_score)
+
+
+async def test_async(
+    prediction_emotion_strs: list[str],
+    true_emotion_strs: list[str],
+    sample_ids: list[str] | None = None,
+    tag: str = "default",
+) -> tuple[pd.DataFrame, tuple[float, float, float]]:
+    return await asyncio.get_event_loop().run_in_executor(
+        None, test, prediction_emotion_strs, true_emotion_strs, sample_ids, tag
+    )
