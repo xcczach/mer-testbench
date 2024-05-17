@@ -54,12 +54,15 @@ def test(
     sample_ids: list[str] | None = None,
     tag: str = "default",
     temperature: float = 0.1,
+    cutoff_sample: int = None,
 ) -> tuple[pd.DataFrame, tuple[float, float, float]]:
     """
     prediction_emotion_strs/ true_emotion_strs: e.g. ["['喜悦', '高兴']", "['悲伤', '难过']"]
     sample_ids: e.g. ["sample_00000007", "sample_00000021"], should align with prediction_emotion_strs
     tag: for logging purpose e.g. "default"
     temperature: temperature for GPT-3.5-turbo
+    cutoff_sample: for testing purpose, only test the first n samples
+    returns: a dataframe and a tuple of mean accuracy, mean recall, mean score
     """
     result_df = pd.DataFrame(
         columns=[
@@ -75,6 +78,8 @@ def test(
         result_df = result_df.drop(columns=["sample"])
 
     for i in range(len(prediction_emotion_strs)):
+        if cutoff_sample is not None and i >= cutoff_sample:
+            break
         try:
             prediction_emotions = ast.literal_eval(prediction_emotion_strs[i])
             true_emotions = ast.literal_eval(true_emotion_strs[i])
@@ -119,9 +124,26 @@ async def test_async(
     true_emotion_strs: list[str],
     sample_ids: list[str] | None = None,
     tag: str = "default",
+    temperature: float = 0.1,
+    cutoff_sample: int = None,
 ) -> tuple[pd.DataFrame, tuple[float, float, float]]:
+    """
+    prediction_emotion_strs/ true_emotion_strs: e.g. ["['喜悦', '高兴']", "['悲伤', '难过']"]
+    sample_ids: e.g. ["sample_00000007", "sample_00000021"], should align with prediction_emotion_strs
+    tag: for logging purpose e.g. "default"
+    temperature: temperature for GPT-3.5-turbo
+    cutoff_sample: for testing purpose, only test the first n samples
+    returns: a dataframe and a tuple of mean accuracy, mean recall, mean score
+    """
     return await asyncio.get_event_loop().run_in_executor(
-        None, test, prediction_emotion_strs, true_emotion_strs, sample_ids, tag
+        None,
+        test,
+        prediction_emotion_strs,
+        true_emotion_strs,
+        sample_ids,
+        tag,
+        temperature,
+        cutoff_sample,
     )
 
 
