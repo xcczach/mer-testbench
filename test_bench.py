@@ -15,7 +15,7 @@ prompt = "请扮演情感领域的专家。我们将提供一组情绪。请将�
 
 
 def get_emotion_ids(
-    prediction_emotions: list[str], true_emotions: list[str]
+    prediction_emotions: list[str], true_emotions: list[str], temperature: float = 0.01
 ) -> tuple[set[int], set[int]]:
 
     all_emotions = set(prediction_emotions + true_emotions)
@@ -23,6 +23,7 @@ def get_emotion_ids(
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": f"{prompt}\n{all_emotions}"}],
+        temperature=temperature,
     )
 
     arrs = ast.literal_eval(completion.choices[0].message.content)
@@ -52,11 +53,13 @@ def test(
     true_emotion_strs: list[str],
     sample_ids: list[str] | None = None,
     tag: str = "default",
+    temperature: float = 0.01,
 ) -> tuple[pd.DataFrame, tuple[float, float, float]]:
     """
     prediction_emotion_strs/ true_emotion_strs: e.g. ["['喜悦', '高兴']", "['悲伤', '难过']"]
     sample_ids: e.g. ["sample_00000007", "sample_00000021"], should align with prediction_emotion_strs
     tag: for logging purpose e.g. "default"
+    temperature: temperature for GPT-3.5-turbo
     """
     result_df = pd.DataFrame(
         columns=[
@@ -77,7 +80,7 @@ def test(
             true_emotions = ast.literal_eval(true_emotion_strs[i])
 
             prediction_ids, true_ids, emotion_group = get_emotion_ids(
-                prediction_emotions, true_emotions
+                prediction_emotions, true_emotions, temperature
             )
             sample_index = i
             accuracy = get_accuracy(prediction_ids, true_ids)
