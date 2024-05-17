@@ -15,7 +15,7 @@ prompt = "请扮演情感领域的专家。我们将提供一组情绪。请将�
 
 
 def get_emotion_ids(
-    prediction_emotions: list[str], true_emotions: list[str], temperature: float = 0.01
+    prediction_emotions: list[str], true_emotions: list[str], temperature: float = 0.1
 ) -> tuple[set[int], set[int]]:
 
     all_emotions = set(prediction_emotions + true_emotions)
@@ -53,7 +53,7 @@ def test(
     true_emotion_strs: list[str],
     sample_ids: list[str] | None = None,
     tag: str = "default",
-    temperature: float = 0.01,
+    temperature: float = 0.1,
 ) -> tuple[pd.DataFrame, tuple[float, float, float]]:
     """
     prediction_emotion_strs/ true_emotion_strs: e.g. ["['喜悦', '高兴']", "['悲伤', '难过']"]
