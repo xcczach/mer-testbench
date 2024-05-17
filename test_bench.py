@@ -3,6 +3,8 @@ import openai
 import ast
 import asyncio
 import dotenv
+import scipy.stats as stats
+import numpy as np
 
 api_key = dotenv.get_key(".env", "API_KEY")
 client = openai.OpenAI(
@@ -118,3 +120,16 @@ async def test_async(
     return await asyncio.get_event_loop().run_in_executor(
         None, test, prediction_emotion_strs, true_emotion_strs, sample_ids, tag
     )
+
+
+def get_mean_and_error(
+    data: list[float], confidence_level: float = 0.95
+) -> tuple[float, float]:
+    mean = np.mean(data)
+    std_dev = np.std(data, ddof=1)
+    n = len(data)
+    degrees_of_freedom = n - 1
+    t_critical = stats.t.ppf((1 + confidence_level) / 2, degrees_of_freedom)
+    standard_error = std_dev / np.sqrt(n)
+    margin_of_error = t_critical * standard_error
+    return mean, margin_of_error
