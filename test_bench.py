@@ -103,10 +103,10 @@ def test(
             print(f"WARNING at {tag}: sample {i} failed")
             continue
 
-        mean_accuracy = result_df["accuracy"].mean()
-        mean_recall = result_df["recall"].mean()
-        mean_score = result_df["score"].mean()
-        return result_df, (mean_accuracy, mean_recall, mean_score)
+    mean_accuracy = result_df["accuracy"].mean()
+    mean_recall = result_df["recall"].mean()
+    mean_score = result_df["score"].mean()
+    return result_df, (mean_accuracy, mean_recall, mean_score)
 
 
 async def test_async(
