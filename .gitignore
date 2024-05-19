@@ -3,3 +3,4 @@
 *.json
 *.ipynb
 __pycache__/
+results/

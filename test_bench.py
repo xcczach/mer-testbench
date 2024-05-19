@@ -150,6 +150,10 @@ async def test_async(
 def get_mean_and_error(
     data: list[float], confidence_level: float = 0.95
 ) -> tuple[float, float]:
+    """
+    return mean and margin of error
+    confidence interval is [mean - margin_of_error, mean + margin_of_error]
+    """
     mean = np.mean(data)
     std_dev = np.std(data, ddof=1)
     n = len(data)
