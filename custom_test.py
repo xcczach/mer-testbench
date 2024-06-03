@@ -1,6 +1,5 @@
 # usage: python custom_test.py <prediction_file_name_without_csv>
 import test_bench
-import json
 import pandas as pd
 import asyncio
 import sys
