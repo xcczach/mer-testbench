@@ -59,7 +59,9 @@ def get_emotion_tendency(emotion_str: str) -> EmotionTendency:
 def get_emotion_tendencies(csv_path: str) -> list[EmotionTendency]:
     if os.path.exists(csv_path):
         emotion_tendency_dt = pd.read_csv(csv_path)
-        emotion_tendencies = list(emotion_tendency_dt["tendency"])
+        emotion_tendencies = [
+            convert_to_tendency(item) for item in emotion_tendency_dt["tendency"]
+        ]
     else:
         emotion_tendencies = [
             get_emotion_tendency(emotion_str) for emotion_str in ground_truth_emotions
@@ -68,7 +70,7 @@ def get_emotion_tendencies(csv_path: str) -> list[EmotionTendency]:
             {
                 "emotion_id": emotion_ids,
                 "emotions": ground_truth_emotions,
-                "tendency": emotion_tendencies,
+                "tendency": [item.value for item in emotion_tendencies],
             }
         )
         emotion_tendency_dt.to_csv(csv_path, index=False)
@@ -82,9 +84,10 @@ prediction_tendencies = get_emotion_tendencies(f"results/{sys.argv[1]}_tendencie
 error_dt = pd.DataFrame(
     {
         "emotion_id": [],
-        "emotions": [],
-        "ground_truth": [],
-        "prediction": [],
+        "ground_truth_emotions": [],
+        "prediction_emotions": [],
+        "ground_truth_tendency": [],
+        "prediction_tendency": [],
     }
 )
 for index, sample_id in enumerate(emotion_ids):
@@ -95,9 +98,10 @@ for index, sample_id in enumerate(emotion_ids):
                 pd.DataFrame(
                     {
                         "emotion_id": [sample_id],
-                        "emotions": [ground_truth_emotions[index]],
-                        "ground_truth": [ground_truth_tendencies[index].value],
-                        "prediction": [prediction_tendencies[index].value],
+                        "ground_truth_emotions": [ground_truth_emotions[index]],
+                        "prediction_emotions": [prediction_emotions[index]],
+                        "ground_truth_tendency": [ground_truth_tendencies[index].value],
+                        "prediction_tendency": [prediction_tendencies[index].value],
                     }
                 ),
             ]
