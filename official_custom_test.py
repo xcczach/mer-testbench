@@ -3,6 +3,10 @@ import test_bench
 import pandas as pd
 import asyncio
 import sys
+import os
+
+if os.path.exists(sys.argv[2]) is False:
+    os.makedirs(sys.argv[2])
 
 prediction_df = pd.read_csv(f"{sys.argv[1]}.csv")
 prediction_emotion_strs = list(prediction_df.iloc[:, 1].to_numpy())
