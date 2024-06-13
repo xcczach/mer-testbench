@@ -1,3 +1,4 @@
+# usage: python translate_result.py <prediction_file_name_without_csv>
 import dotenv
 import openai
 import pandas as pd

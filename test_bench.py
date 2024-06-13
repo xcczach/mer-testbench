@@ -14,29 +14,93 @@ client = openai.OpenAI(
 prompt = "请扮演情感领域的专家。我们将提供一组情绪。请将这些情绪分组，每组包含同义词或一致的情感术语。直接以Python列表形式输出结果。"
 
 
-def get_emotion_ids(
-    prediction_emotions: list[str], true_emotions: list[str], temperature: float = 0.1
+def get_en_prompt(merge_openset: list):
+    return f"Please assume the role of an expert in the field of emotions. We provide a set of emotions. \
+Please group the emotions, with each group containing emotions with the same meaning. \
+Directly output the results. The output format should be a list containing multiple lists. \
+Input: ['Agree', 'agreement', 'Relaxed', 'acceptance', 'pleasant', 'relaxed', 'Accept', 'positive', 'Happy'] Output: [['Agree', 'agreement', 'Accept', 'acceptance'], ['Relaxed', 'relaxed'],['pleasant', 'positive', 'Happy']] \
+Input: {merge_openset} Output:"
+
+
+def my_get_prediction_and_true_ids(
+    emotion_groups: list[list], prediction_emotions: list[str], true_emotions: list[str]
 ) -> tuple[set[int], set[int]]:
-
-    all_emotions = set(prediction_emotions + true_emotions)
-
-    completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": f"{prompt}\n{all_emotions}"}],
-        temperature=temperature,
-    )
-
-    arrs = ast.literal_eval(completion.choices[0].message.content)
     prediction_ids = set()
     true_ids = set()
     for emotion in prediction_emotions:
-        for i, arr in enumerate(arrs):
+        for i, arr in enumerate(emotion_groups):
             if emotion in arr:
                 prediction_ids.add(i)
     for emotion in true_emotions:
-        for i, arr in enumerate(arrs):
+        for i, arr in enumerate(emotion_groups):
             if emotion in arr:
                 true_ids.add(i)
+    return prediction_ids, true_ids
+
+
+def official_get_prediction_and_true_ids(
+    emotion_groups: list[list], prediction_emotions: list[str], true_emotions: list[str]
+) -> tuple[set[int], set[int]]:
+    synonym_map = {}
+    for one_list in emotion_groups:
+        for i in range(len(one_list)):
+            synonym_map[one_list[i]] = one_list[0]
+    prediction_emotions = [item.lower() for item in prediction_emotions]
+    prediction_ids = set(
+        [
+            synonym_map[item] if item in synonym_map else item
+            for item in prediction_emotions
+        ]
+    )
+
+    true_emotions = [item.lower() for item in true_emotions]
+    true_ids = set(
+        [synonym_map[item] if item in synonym_map else item for item in true_emotions]
+    )
+    return prediction_ids, true_ids
+
+
+def get_emotion_ids(
+    prediction_emotions: list[str],
+    true_emotions: list[str],
+    temperature: float = 0.1,
+    official: bool = False,
+) -> tuple[set[int], set[int]]:
+
+    all_emotions = (
+        set(prediction_emotions + true_emotions)
+        if not official
+        else list(set(prediction_emotions) | set(true_emotions))
+    )
+
+    completion = (
+        client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": f"{prompt}\n{all_emotions}"}],
+            temperature=temperature,
+        )
+        if not official
+        else client.chat.completions.create(
+            model="gpt-3.5-turbo-16k-0613",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [{"type": "text", "text": get_en_prompt(all_emotions)}],
+                }
+            ],
+            temperature=temperature,
+            max_tokens=1000,
+        )
+    )
+
+    arrs = ast.literal_eval(completion.choices[0].message.content)
+    prediction_ids, true_ids = (
+        my_get_prediction_and_true_ids(arrs, prediction_emotions, true_emotions)
+        if not official
+        else official_get_prediction_and_true_ids(
+            arrs, prediction_emotions, true_emotions
+        )
+    )
     return prediction_ids, true_ids, arrs
 
 
@@ -55,6 +119,7 @@ def test(
     tag: str = "default",
     temperature: float = 0.1,
     cutoff_sample: int = None,
+    official: bool = False,
 ) -> tuple[pd.DataFrame, tuple[float, float, float]]:
     """
     prediction_emotion_strs/ true_emotion_strs: e.g. ["['喜悦', '高兴']", "['悲伤', '难过']"]
@@ -85,7 +150,7 @@ def test(
             true_emotions = ast.literal_eval(true_emotion_strs[i])
 
             prediction_ids, true_ids, emotion_group = get_emotion_ids(
-                prediction_emotions, true_emotions, temperature
+                prediction_emotions, true_emotions, temperature, official
             )
             sample_index = i
             accuracy = get_accuracy(prediction_ids, true_ids)
@@ -126,6 +191,7 @@ async def test_async(
     tag: str = "default",
     temperature: float = 0.1,
     cutoff_sample: int = None,
+    official: bool = False,
 ) -> tuple[pd.DataFrame, tuple[float, float, float]]:
     """
     prediction_emotion_strs/ true_emotion_strs: e.g. ["['喜悦', '高兴']", "['悲伤', '难过']"]
@@ -144,6 +210,7 @@ async def test_async(
         tag,
         temperature,
         cutoff_sample,
+        official,
     )
 
 
