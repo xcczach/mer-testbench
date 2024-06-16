@@ -56,7 +56,7 @@ def get_emotion_tendency(emotion_str: str) -> EmotionTendency:
     return convert_to_tendency(get_response(emotion_str))
 
 
-def get_emotion_tendencies(csv_path: str) -> list[EmotionTendency]:
+def get_emotion_tendencies(csv_path: str, emotions: list) -> list[EmotionTendency]:
     if os.path.exists(csv_path):
         emotion_tendency_dt = pd.read_csv(csv_path)
         emotion_tendencies = [
@@ -64,7 +64,7 @@ def get_emotion_tendencies(csv_path: str) -> list[EmotionTendency]:
         ]
     else:
         emotion_tendencies = [
-            get_emotion_tendency(emotion_str) for emotion_str in ground_truth_emotions
+            get_emotion_tendency(emotion_str) for emotion_str in emotions
         ]
         emotion_tendency_dt = pd.DataFrame(
             {
@@ -77,8 +77,12 @@ def get_emotion_tendencies(csv_path: str) -> list[EmotionTendency]:
     return emotion_tendencies
 
 
-ground_truth_tendencies = get_emotion_tendencies("results/ground_truth_tendencies.csv")
-prediction_tendencies = get_emotion_tendencies(f"results/{sys.argv[1]}_tendencies.csv")
+ground_truth_tendencies = get_emotion_tendencies(
+    "results/ground_truth_tendencies.csv", ground_truth_emotions
+)
+prediction_tendencies = get_emotion_tendencies(
+    f"results/{sys.argv[1]}_tendencies.csv", prediction_emotions
+)
 
 # 列出情感倾向不匹配的sample
 error_dt = pd.DataFrame(
