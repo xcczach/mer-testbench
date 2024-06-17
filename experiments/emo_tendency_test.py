@@ -69,7 +69,7 @@ def get_emotion_tendencies(csv_path: str, emotions: list) -> list[EmotionTendenc
         emotion_tendency_dt = pd.DataFrame(
             {
                 "emotion_id": emotion_ids,
-                "emotions": ground_truth_emotions,
+                "emotions": emotions,
                 "tendency": [item.value for item in emotion_tendencies],
             }
         )
